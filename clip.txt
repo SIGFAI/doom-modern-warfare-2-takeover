@@ -1,0 +1,6 @@
+Moments the clip must show, in order:
+[x] 1. Opening gag: "CARE PACKAGE INBOUND", red smoke, a squad of masked operators and a Juggernaut arrive in view.
+[x] 2. The ACR rifle hits them: hitmarker, kill feed, operators drop; enemies keep arriving.
+[x] 3. Second kill: care package restock with a big green message.
+[x] 4. Fourth kill: Predator missile banner and strike.
+[x] 5. Sixth kill: nuke countdown, white flash, mushroom cloud, every enemy dies.

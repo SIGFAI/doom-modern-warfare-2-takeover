@@ -1,0 +1,534 @@
+version "4.14"
+
+// ---------------------------------------------------------------- enemies
+
+class MW2Monster : Actor
+{
+	bool playerHit;
+
+	// Task Force troops stop and shoot once they are close, instead of crowding the player.
+	void HoldChase(double minDist)
+	{
+		if (target && Distance2D(target) < minDist && CheckSight(target)) A_Chase(null, "Missile", CHF_DONTMOVE);
+		else A_Chase();
+	}
+}
+
+class Operator : MW2Monster
+{
+	Default
+	{
+		Health 60;
+		Radius 20;
+		Height 54;
+		Mass 100;
+		Speed 9;
+		PainChance 160;
+		Scale 0.5;
+		MONSTER;
+		Species "Taskforce";
+		+DONTHARMSPECIES;
+		+FLOORCLIP;
+		SeeSound "op/rifle";
+		PainSound "op/grunt";
+		DeathSound "op/die";
+		ActiveSound "op/rifle";
+		Obituary "%o was taken out by a Task Force operator.";
+	}
+	States
+	{
+	Spawn:
+		OPER A 10 Bright A_Look;
+		Loop;
+	See:
+		OPER A 3 Bright HoldChase(220);
+		OPER F 3 Bright HoldChase(220);
+		OPER B 3 Bright HoldChase(220);
+		OPER G 3 Bright HoldChase(220);
+		Loop;
+	Missile:
+		OPER A 10 Bright A_FaceTarget;
+		TNT1 A 0 { if (random(0, 3) == 0) { return ResolveState("Grenade"); } return ResolveState(null); }
+		OPER C 3 Bright { A_FaceTarget(); A_StartSound("op/rifle", CHAN_WEAPON); A_CustomBulletAttack(5, 0, 1, random(3, 5), "BulletPuff"); }
+		OPER A 3 Bright A_FaceTarget;
+		OPER C 3 Bright { A_FaceTarget(); A_StartSound("op/rifle", CHAN_WEAPON); A_CustomBulletAttack(5, 0, 1, random(3, 5), "BulletPuff"); }
+		OPER A 3 Bright A_FaceTarget;
+		OPER C 3 Bright { A_FaceTarget(); A_StartSound("op/rifle", CHAN_WEAPON); A_CustomBulletAttack(5, 0, 1, random(3, 5), "BulletPuff"); }
+		OPER A 12;
+		Goto See;
+	Grenade:
+		OPER C 8 Bright A_FaceTarget;
+		OPER A 10 Bright A_SpawnProjectile("FragGrenade", 36, 0, 0, CMF_AIMDIRECTION, 12);
+		Goto See;
+	Pain:
+		OPER D 4;
+		OPER D 4 Bright A_Pain;
+		Goto See;
+	Death:
+		OPER D 4 Bright A_Scream;
+		OPER E 4 Bright A_NoBlocking;
+		OPER E 4;
+		OPER E -1;
+		Stop;
+	}
+}
+
+class Juggernaut : MW2Monster
+{
+	Default
+	{
+		Health 450;
+		Radius 28;
+		Height 84;
+		Mass 600;
+		Speed 4;
+		PainChance 40;
+		Scale 0.55;
+		MONSTER;
+		Species "Taskforce";
+		+DONTHARMSPECIES;
+		+FLOORCLIP;
+		+BOSSDEATH;
+		SeeSound "op/mini";
+		PainSound "op/grunt";
+		DeathSound "op/die";
+		ActiveSound "op/mini";
+		Obituary "%o was mowed down by a Juggernaut.";
+	}
+	States
+	{
+	Spawn:
+		JUGG A 10 Bright A_Look;
+		Loop;
+	See:
+		JUGG A 6 Bright HoldChase(200);
+		JUGG A 6 Bright HoldChase(200);
+		JUGG B 6 Bright HoldChase(200);
+		JUGG B 6 Bright HoldChase(200);
+		Loop;
+	Missile:
+		JUGG A 14 Bright { A_FaceTarget(); A_StartSound("op/mini", CHAN_WEAPON); }
+		JUGG C 2 Bright { A_FaceTarget(); A_CustomBulletAttack(8, 0, 1, random(4, 6), "BulletPuff"); }
+		JUGG B 2 Bright { A_FaceTarget(); A_CustomBulletAttack(8, 0, 1, random(4, 6), "BulletPuff"); }
+		JUGG C 2 Bright { A_FaceTarget(); A_CustomBulletAttack(8, 0, 1, random(4, 6), "BulletPuff"); }
+		JUGG B 2 Bright { A_FaceTarget(); A_CustomBulletAttack(8, 0, 1, random(4, 6), "BulletPuff"); }
+		JUGG C 2 Bright { A_FaceTarget(); A_CustomBulletAttack(8, 0, 1, random(4, 6), "BulletPuff"); }
+		JUGG B 2 Bright { A_FaceTarget(); A_CustomBulletAttack(8, 0, 1, random(4, 6), "BulletPuff"); }
+		JUGG C 2 Bright { A_FaceTarget(); A_CustomBulletAttack(8, 0, 1, random(4, 6), "BulletPuff"); }
+		JUGG B 2 Bright { A_FaceTarget(); A_CustomBulletAttack(8, 0, 1, random(4, 6), "BulletPuff"); }
+		JUGG A 16;
+		Goto See;
+	Pain:
+		JUGG B 5;
+		JUGG B 5 Bright A_Pain;
+		Goto See;
+	Death:
+		JUGG B 6 Bright A_Scream;
+		JUGG D 6 Bright A_NoBlocking;
+		JUGG D 6;
+		JUGG D -1;
+		Stop;
+	}
+}
+
+// Thrown by operators: bounces, then blows up.
+class FragGrenade : Actor
+{
+	Default
+	{
+		Radius 6;
+		Height 8;
+		Speed 14;
+		Damage 0;
+		Scale 0.5;
+		Projectile;
+		-NOGRAVITY;
+		BounceType "Doom";
+		+DONTHARMSPECIES;
+		Species "Taskforce";
+		-NOBLOCKMAP;
+		BounceFactor 0.5;
+		WallBounceFactor 0.5;
+		Gravity 0.5;
+		ReactionTime 45;
+		DeathSound "op/missile";
+	}
+	States
+	{
+	Spawn:
+		GREN A 1 { A_CountDown(); A_SpawnParticle(0xFF3010, SPF_FULLBRIGHT, 12, 9, 0, 0, 0, 14, frandom(-0.5, 0.5), frandom(-0.5, 0.5), 1.0, 0, 0, 0, 1.0, 0.08); }
+		Loop;
+	Death:
+		TNT1 A 0 A_Stop;
+		MISL B 4 Bright { A_StartSound("op/missile", CHAN_BODY); A_Explode(90, 128); A_QuakeEx(2, 2, 2, 8, 0, 400); }
+		MISL C 4 Bright;
+		MISL D 4 Bright;
+		Stop;
+	}
+}
+
+// ---------------------------------------------------------------- killstreak rewards
+
+class CarePackage : Actor
+{
+	Default
+	{
+		Radius 26;
+		Height 44;
+		Scale 0.6;
+		+SOLID;
+		+SHOOTABLE;
+		+NODAMAGE;
+		+NOBLOOD;
+		Gravity 0.35;
+	}
+	States
+	{
+	Spawn:
+		CRAT A 1 Bright { A_SpawnParticle(0xFF2020, SPF_FULLBRIGHT, 50, 24, 0, 0, 40, 0, frandom(-0.5, 0.5), frandom(-0.5, 0.5), 0.6, 0, 0, 0, 0.8, -0.02); if (pos.z <= floorz + 1) { return ResolveState("Landed"); } return ResolveState(null); }
+		Loop;
+	Landed:
+		CRAT A 0 { A_StartSound("op/care", CHAN_BODY); A_QuakeEx(1, 1, 1, 6, 0, 600); }
+		CRAT A 1 Bright { A_SpawnParticle(0xFF2020, SPF_FULLBRIGHT, 50, 24, 0, 0, 40, 0, frandom(-0.5, 0.5), frandom(-0.5, 0.5), 0.6, 0, 0, 0, 0.8, -0.02); }
+		CRAT A 1 Bright A_SpawnParticle(0xFF2020, SPF_FULLBRIGHT, 50, 24, 0, 0, 40, 0, frandom(-0.5, 0.5), frandom(-0.5, 0.5), 0.6, 0, 0, 0, 0.8, -0.02);
+		Wait;
+	}
+}
+
+class PredatorMissile : Actor
+{
+	Default
+	{
+		Radius 8;
+		Height 8;
+		Speed 14;
+		Damage 20;
+		Scale 1.0;
+		Projectile;
+		+NOGRAVITY;
+		+RANDOMIZE;
+		DeathSound "op/missile";
+		SeeSound "op/missile";
+		DamageType "Predator";
+	}
+	States
+	{
+	Spawn:
+		PRED A 1 Bright A_SpawnParticle(0xFFAA33, SPF_FULLBRIGHT, 24, 14, 0, 0, 0, 90, 0, 0, 3, 0, 0, 0, 0.9, 0.04);
+		Loop;
+	Death:
+		MISL B 4 Bright { A_StartSound("op/missile", CHAN_BODY); A_Explode(300, 220); A_QuakeEx(5, 5, 5, 20, 0, 800, "", QF_SCALEDOWN); A_SetScale(5.0); }
+		MISL C 4 Bright;
+		MISL D 4 Bright;
+		Stop;
+	}
+}
+
+// ---------------------------------------------------------------- weapon
+
+class ACR : Weapon replaces Chaingun
+{
+	Default
+	{
+		Weapon.SelectionOrder 700;
+		Weapon.SlotNumber 4;
+		Weapon.AmmoType "Clip";
+		Weapon.AmmoUse 1;
+		Weapon.AmmoGive 60;
+		Weapon.Kickback 40;
+		Inventory.PickupMessage "You got the ACR assault rifle!";
+		Obituary "%o was shot by an ACR.";
+		+WEAPON.NOALERT;
+	}
+	States
+	{
+	Spawn:
+		CLIP A -1;
+		Stop;
+	Ready:
+		ACRG A 1 A_WeaponReady;
+		Loop;
+	Deselect:
+		ACRG A 1 A_Lower;
+		Loop;
+	Select:
+		ACRG A 1 A_Raise;
+		Loop;
+	Fire:
+		ACRG B 2 Bright { A_FireBullets(2.5, 1.0, 1, 8, "BulletPuff"); A_StartSound("op/rifle", CHAN_WEAPON); A_GunFlash(); }
+		ACRG A 2;
+		ACRG A 0 A_ReFire;
+		Goto Ready;
+	Flash:
+		TNT1 A 2 A_Light1;
+		TNT1 A 0 A_Light0;
+		Stop;
+	}
+}
+
+// ---------------------------------------------------------------- game rules
+
+class MW2Handler : EventHandler
+{
+	const TIER_CARE = 2;
+	const TIER_PRED = 4;
+	const TIER_NUKE = 6;
+	const SQUAD_MIN = 6;
+
+	bool nuking;
+	int streak, score, kills;
+	int hitAt, hitKillAt, bannerAt, announceAt, nukeAt, flashAt;
+	string banner, announce, feed, bigMsg;
+	int feedAt, bigMsgAt;
+	int careAt;
+	Actor crate;
+	int nextSpawn;
+
+	override void CheckReplacement(ReplaceEvent e)
+	{
+		Class<Actor> r = e.Replacee;
+		if (r == "ZombieMan" || r == "ShotgunGuy" || r == "ChaingunGuy" || r == "DoomImp" || r == "WolfensteinSS") e.Replacement = "Operator";
+		else if (r == "Demon" || r == "Spectre" || r == "HellKnight" || r == "BaronOfHell") e.Replacement = "Juggernaut";
+	}
+
+	// Red smoke flare that marks every reinforcement as it arrives.
+	void Flare(Actor a)
+	{
+		for (int i = 0; i < 18; i++)
+			a.A_SpawnParticle(0xFF2A18, SPF_FULLBRIGHT, 45, frandom(10, 20), 0, frandom(-8, 8), frandom(-8, 8), frandom(0, 20), frandom(-1, 1), frandom(-1, 1), frandom(1.5, 4), 0, 0, -0.02, 0.9, 0.02);
+		a.A_StartSound("op/care", CHAN_AUTO, CHANF_OVERLAP, 0.4);
+	}
+
+	Actor SpawnTroop(Actor pmo, Class<Actor> cls)
+	{
+		for (int i = 0; i < 16; i++)
+		{
+			Vector3 p = i < 6 ? pmo.Vec3Angle(frandom(220, 400), pmo.angle + frandom(-35, 35)) : pmo.Vec3Angle(frandom(140, 320), frandom(0, 360));
+			let m = Actor.Spawn(cls, (p.x, p.y, pmo.pos.z));
+			if (!m) continue;
+			if (!m.TestMobjLocation() || !pmo.CheckSight(m)) { m.Destroy(); continue; }
+			m.angle = pmo.AngleTo(m) + 180;
+			Flare(m);
+			return m;
+		}
+		return null;
+	}
+
+	// Reinforcements dropped next to the player (console summons) are spread out in front, in view.
+	override void WorldThingSpawned(WorldEvent e)
+	{
+		let mm = MW2Monster(e.Thing);
+		if (!mm || level.maptime < 5) return;
+		let pmo = players[consoleplayer].mo;
+		if (!pmo || pmo.Distance2D(mm) > 140) return;
+		for (int i = 0; i < 8; i++)
+		{
+			if (mm.Warp(pmo, frandom(300, 560), frandom(-200, 200), 0, 0)) break;
+		}
+		Flare(mm);
+	}
+
+	override void PlayerEntered(PlayerEvent e)
+	{
+		let pmo = players[e.PlayerNumber].mo;
+		if (pmo)
+		{
+			pmo.GiveInventory("RocketLauncher", 1);
+			pmo.GiveInventory("RocketAmmo", 30);
+			pmo.GiveInventory("ACR", 1);
+			pmo.GiveInventory("Clip", 200);
+			pmo.A_SelectWeapon("ACR");
+		}
+		Console.MidPrint(bigfont, "MODERN WARFARE 2 TAKEOVER\nTask Force 141 hostiles inbound");
+		bannerAt = level.maptime; banner = "TASK FORCE 141 INBOUND";
+	}
+
+	override void WorldThingDamaged(WorldEvent e)
+	{
+		if (e.Thing && e.Thing.bIsMonster && e.DamageSource && e.DamageSource.player && e.Damage > 0)
+		{
+			let mm = MW2Monster(e.Thing);
+			if (mm) mm.playerHit = true;
+			hitAt = level.maptime;
+			if (e.Thing.health <= 0) hitKillAt = level.maptime;
+			e.DamageSource.A_StartSound("op/hitm", CHAN_AUTO, CHANF_OVERLAP, 0.8);
+		}
+	}
+
+	override void WorldThingDied(WorldEvent e)
+	{
+		if (!e.Thing || !e.Thing.bIsMonster || !e.Thing.bCountKill) return;
+		let mm = MW2Monster(e.Thing);
+		if (nuking || !mm || !mm.playerHit) return;
+		streak++; kills++;
+		int pts = (e.Thing is "Juggernaut") ? 500 : 100;
+		score += pts;
+		feed = (e.Thing is "Juggernaut") ? "JUGGERNAUT DOWN  +500" : "ENEMY ELIMINATED  +100";
+		feedAt = level.maptime;
+		if (streak == TIER_CARE) Reward("CARE PACKAGE", "op/v_care");
+		else if (streak == TIER_PRED) Reward("PREDATOR MISSILE", "op/v_pred");
+		else if (streak >= TIER_NUKE && !nukeAt) Reward("TACTICAL NUKE", "op/v_nuke");
+	}
+
+	void Reward(string name, sound snd)
+	{
+		let pmo = players[consoleplayer].mo;
+		if (!pmo) return;
+		banner = String.Format("%d KILL STREAK", streak);
+		announce = name;
+		bannerAt = level.maptime; announceAt = level.maptime;
+		pmo.A_StartSound(snd, CHAN_VOICE, CHANF_OVERLAP);
+		if (streak == TIER_CARE) DropCrate(pmo);
+		else if (streak == TIER_PRED) FireMissiles(pmo);
+		else { nukeAt = level.maptime + 105; streak = TIER_NUKE; }
+	}
+
+	void DropCrate(Actor pmo)
+	{
+		Vector3 p = pmo.Vec3Angle(170, pmo.angle);
+		crate = Actor.Spawn("CarePackage", (p.x, p.y, pmo.pos.z + 450));
+		if (crate) { crate.vel.z = -7; careAt = level.maptime + 110; }
+	}
+
+	void FireMissiles(Actor pmo)
+	{
+		let it = ThinkerIterator.Create("Actor");
+		Actor a; int n = 0;
+		while ((a = Actor(it.Next())) && n < 5)
+		{
+			if (!a.bIsMonster || a.health <= 0 || pmo.Distance3D(a) > 1800 || !pmo.CheckSight(a)) continue;
+			let m = Actor.Spawn("PredatorMissile", (a.pos.x, a.pos.y, a.pos.z + 280));
+			if (m) { m.vel = (0, 0, -14); m.target = pmo; n++; }
+		}
+		if (n == 0)
+		{
+			Vector3 p = pmo.Vec3Angle(400, pmo.angle);
+			let m = Actor.Spawn("PredatorMissile", (p.x, p.y, pmo.pos.z + 280));
+			if (m) { m.vel = (0, 0, -14); m.target = pmo; }
+		}
+	}
+
+	int Alive()
+	{
+		let it = ThinkerIterator.Create("MW2Monster");
+		MW2Monster a; int n = 0;
+		while ((a = MW2Monster(it.Next()))) if (a.health > 0) n++;
+		return n;
+	}
+
+	override void WorldTick()
+	{
+		let pmo = players[consoleplayer].mo;
+		if (!pmo) return;
+		// opening gag: a care package and a squad drop in front of the player
+		if (level.maptime == 12)
+		{
+			DropCrate(pmo);
+			banner = "CARE PACKAGE INBOUND"; bannerAt = level.maptime;
+			pmo.A_StartSound("op/v_care", CHAN_VOICE, CHANF_OVERLAP);
+		}
+		if (level.maptime == 30) { for (int i = 0; i < 4; i++) SpawnTroop(pmo, "Operator"); SpawnTroop(pmo, "Juggernaut"); }
+		// the fight never stops: keep a squad advancing in front of the player
+		if (level.maptime > 60 && level.maptime >= nextSpawn)
+		{
+			nextSpawn = level.maptime + 50;
+			if (Alive() < SQUAD_MIN) { SpawnTroop(pmo, "Operator"); SpawnTroop(pmo, random(0, 5) == 0 ? "Juggernaut" : "Operator"); }
+		}
+		// crate opens
+		if (careAt && level.maptime >= careAt)
+		{
+			careAt = 0;
+			if (crate)
+			{
+				pmo.GiveInventory("Clip", 60); pmo.GiveInventory("Shell", 20); pmo.GiveInventory("RocketAmmo", 15);
+				pmo.GiveInventory("BlueArmor", 1);
+				pmo.A_SetHealth(max(pmo.health, 200));
+				bigMsg = "CARE PACKAGE: AMMO + ARMOR RESTOCKED"; bigMsgAt = level.maptime;
+				pmo.A_SetBlend("Green", 0.35, 20);
+				for (int i = 0; i < 40; i++) crate.A_SpawnParticle(0xFFEE55, SPF_FULLBRIGHT, 35, 8, 0, 0, 10, 0, frandom(-5, 5), frandom(-5, 5), frandom(2, 8), 0, 0, -0.3);
+				crate.Destroy();
+			}
+		}
+		// tactical nuke countdown
+		if (nukeAt)
+		{
+			if (level.maptime == nukeAt - 70) { banner = "NUKE IN 2"; bannerAt = level.maptime; }
+			if (level.maptime == nukeAt - 35) { banner = "NUKE IN 1"; bannerAt = level.maptime; }
+			if (level.maptime % 12 == 0) pmo.A_SetBlend("Red", 0.2, 6);
+			if (level.maptime >= nukeAt)
+			{
+				nukeAt = 0; flashAt = level.maptime; streak = 0; bannerAt = 0; announceAt = 0;
+				pmo.A_StartSound("op/nuke", CHAN_BODY, CHANF_OVERLAP);
+				pmo.A_QuakeEx(8, 8, 8, 70, 0, 4000);
+				let it = ThinkerIterator.Create("Actor");
+				Actor a;
+				nuking = true;
+				while ((a = Actor(it.Next())))
+				{
+					if (a.bIsMonster && a.health > 0 && !a.player) a.DamageMobj(pmo, pmo, 10000, 'Nuke', DMG_FORCED | DMG_NO_PAIN);
+				}
+				nuking = false;
+				score += 1000;
+				feed = "TACTICAL NUKE  +1000"; feedAt = level.maptime;
+			}
+		}
+		if (flashAt && level.maptime < flashAt + 100) pmo.A_SetBlend("White", level.maptime < flashAt + 30 ? 1.0 : 1.0 - double(level.maptime - flashAt - 30) / 70.0, 2);
+	}
+
+	override void RenderOverlay(RenderEvent e)
+	{
+		int now = level.maptime;
+		int w = Screen.GetWidth(), h = Screen.GetHeight();
+		double k = h / 480.0;
+		let bf = Font.GetFont("SmallFont");
+		// nuke cloud rising over the screen
+		if (flashAt && now - flashAt < 140 && now >= flashAt)
+		{
+			TextureID t = TexMan.CheckForTexture("MUSHA0", TexMan.Type_Sprite);
+			if (t.IsValid())
+			{
+				double grow = 0.6 + 0.4 * (now - flashAt) / 140.0;
+				double al = now - flashAt < 90 ? 1.0 : 1.0 - double(now - flashAt - 90) / 50.0;
+				double sz = h * 1.1 * grow;
+				Screen.DrawTexture(t, false, w * 0.5 - sz * 0.5, h * 0.95 - sz, DTA_DestWidthF, sz, DTA_DestHeightF, sz, DTA_TopOffset, 0, DTA_LeftOffset, 0, DTA_Alpha, al);
+			}
+		}
+		// hitmarker
+		int dt = now - hitAt;
+		if (hitAt && dt >= 0 && dt < 8)
+		{
+			int col = (hitKillAt && now - hitKillAt < 8) ? 0xFFFF2020 : 0xFFFFFFFF;
+			int cx = w / 2, cy = h / 2, s = h / 40, g = h / 120 + 2;
+			Screen.DrawLine(cx - s, cy - s, cx - g, cy - g, col); Screen.DrawLine(cx + s, cy - s, cx + g, cy - g, col);
+			Screen.DrawLine(cx - s, cy + s, cx - g, cy + g, col); Screen.DrawLine(cx + s, cy + s, cx + g, cy + g, col);
+			Screen.DrawLine(cx - s + 1, cy - s, cx - g + 1, cy - g, col); Screen.DrawLine(cx + s + 1, cy - s, cx + g + 1, cy - g, col);
+			Screen.DrawLine(cx - s + 1, cy + s, cx - g + 1, cy + g, col); Screen.DrawLine(cx + s + 1, cy + s, cx + g + 1, cy + g, col);
+		}
+		// kill feed
+		if (feedAt && now - feedAt < 70)
+			Screen.DrawText(bf, Font.CR_GOLD, w * 0.5 - bf.StringWidth(feed) * 0.5 * k * 1.5, h * 0.66 - (now - feedAt) * 0.3, feed, DTA_ScaleX, k * 1.5, DTA_ScaleY, k * 1.5);
+		// care package message
+		if (bigMsgAt && now - bigMsgAt < 90)
+			Screen.DrawText(bf, Font.CR_GREEN, w * 0.5 - bf.StringWidth(bigMsg) * 0.5 * k * 2.2, h * 0.45, bigMsg, DTA_ScaleX, k * 2.2, DTA_ScaleY, k * 2.2);
+		// streak banner
+		if (bannerAt && now - bannerAt < 90)
+		{
+			double sc = k * 2.0;
+			Screen.DrawText(bf, Font.CR_ORANGE, w * 0.5 - bf.StringWidth(banner) * 0.5 * sc, h * 0.14, banner, DTA_ScaleX, sc, DTA_ScaleY, sc);
+			if (announceAt && now - announceAt < 90)
+				Screen.DrawText(bf, Font.CR_RED, w * 0.5 - bf.StringWidth(announce) * 0.5 * sc * 1.3, h * 0.14 + 18 * sc, announce, DTA_ScaleX, sc * 1.3, DTA_ScaleY, sc * 1.3);
+		}
+		// score and streak counter
+		string st = String.Format("SCORE %d   STREAK %d", score, streak);
+		double sc2 = k * 1.2;
+		Screen.DrawText(bf, Font.CR_WHITE, w - bf.StringWidth(st) * sc2 - 12, 10, st, DTA_ScaleX, sc2, DTA_ScaleY, sc2);
+		// nuke countdown
+		if (nukeAt)
+		{
+			string nk = "TACTICAL NUKE INCOMING";
+			double sc3 = k * 2.6;
+			if ((now / 6) % 2 == 0)
+				Screen.DrawText(bf, Font.CR_RED, w * 0.5 - bf.StringWidth(nk) * 0.5 * sc3, h * 0.38, nk, DTA_ScaleX, sc3, DTA_ScaleY, sc3);
+		}
+	}
+}

@@ -1,0 +1,13 @@
+op/rifle sounds/rifle.ogg
+op/mini sounds/mini.ogg
+op/grunt sounds/grunt.ogg
+op/die sounds/die.ogg
+op/hitm sounds/hitm.ogg
+op/nuke sounds/nuke.ogg
+op/care sounds/care.ogg
+op/missile sounds/missile.ogg
+op/v_care sounds/v_care.ogg
+op/v_pred sounds/v_pred.ogg
+op/v_nuke sounds/v_nuke.ogg
+$limit op/rifle 4
+$limit op/hitm 3
