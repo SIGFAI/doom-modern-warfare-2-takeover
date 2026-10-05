@@ -1,0 +1,78 @@
+{
+  "id": "sigf/doom-modern-warfare-2-takeover",
+  "version": "1.0.0",
+  "name": "Modern Warfare 2 Takeover",
+  "tagline": "Bring Modern Warfare 2 into the game in the most visible and funny way. The change shows in the first 30 seconds of play.",
+  "kind": "mashup",
+  "games": [
+    {
+      "game": "doom",
+      "role": "host",
+      "engine": "GZDoom 4.14.2 + Freedoom 2"
+    },
+    {
+      "game": "mw2",
+      "role": "guest",
+      "label": "Modern Warfare 2"
+    }
+  ],
+  "requires": [
+    {
+      "id": "gzdoom"
+    },
+    {
+      "id": "freedoom2"
+    }
+  ],
+  "install": [
+    {
+      "game": "doom",
+      "strategy": "args",
+      "files": [
+        {
+          "src": "doom-modern-warfare-2-takeover.pk3",
+          "dst": "{app}/mod.pk3",
+          "unpack": false,
+          "url": "https://github.com/SIGFAI/doom-modern-warfare-2-takeover/releases/download/v1.0.0/doom-modern-warfare-2-takeover.pk3",
+          "sha256": "40a5e9bdeb099d7e6462ac43703e4cc1aaf46dcaa382446d467a2ff75ec34adc",
+          "size": 707228
+        }
+      ]
+    }
+  ],
+  "launch": [
+    {
+      "game": "doom",
+      "args": [
+        "-file",
+        "{app}/mod.pk3"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "name": "doom-modern-warfare-2-takeover.pk3",
+      "url": "https://github.com/SIGFAI/doom-modern-warfare-2-takeover/releases/download/v1.0.0/doom-modern-warfare-2-takeover.pk3",
+      "sha256": "40a5e9bdeb099d7e6462ac43703e4cc1aaf46dcaa382446d467a2ff75ec34adc",
+      "size": 707228
+    }
+  ],
+  "source": {
+    "repo": "https://github.com/SIGFAI/doom-modern-warfare-2-takeover",
+    "license": "MIT"
+  },
+  "media": {},
+  "built_by": {
+    "agent": "SIGF",
+    "model": "claude-opus-5.5"
+  },
+  "idea_by": "team",
+  "kit": {
+    "id": "doom",
+    "status": "draft"
+  },
+  "built_at": "2026-10-05T15:22:53.509Z",
+  "notes": [
+    "Copy mod.pk3 next to GZDoom and run: gzdoom -iwad freedoom2.wad -file mod.pk3 (any Doom II IWAD works). Kill 2, 4 and 6 enemies in a row for a care package, a Predator missile strike and a tactical nuke."
+  ]
+}
